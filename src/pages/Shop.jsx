@@ -21,24 +21,22 @@ const Shop = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const response = await axios.get('https://api.escuelajs.co/api/v1/products');
+                const [productRes, categoryRes] = await Promise.all([
+                    axios.get('https://api.escuelajs.co/api/v1/products'),
+                    axios.get('https://api.escuelajs.co/api/v1/categories')
+                ]);
 
+                // 1. Process Products
                 // Allow letters, spaces, numbers, and common punctuation like &, -, ', etc.
                 const isCleanCategory = (name) => /^[a-zA-Z0-9\s&'-]+$/.test(name) && !/test/i.test(name) && name.length < 40;
 
-                // 2. Fetch Local & Deleted data
                 const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
                 const deletedIds = JSON.parse(localStorage.getItem('deleted_products') || '[]');
-
-                // 3. Filter API products: 
-                //    - Must be valid images/categories
-                //    - Must NOT be in deleted_products
-                //    - Must NOT be in local_products (Overrides)
 
                 const localIds = new Set(localProducts.map(p => p.id));
                 const deletedSet = new Set(deletedIds);
 
-                const validApiProducts = response.data.filter(product =>
+                const validApiProducts = productRes.data.filter(product =>
                     product.images.length > 0 &&
                     product.images[0].startsWith('http') &&
                     !product.images[0].includes('placeimg.com') &&
@@ -47,15 +45,19 @@ const Shop = () => {
                     !localIds.has(product.id)
                 );
 
-                // 4. Merge Local Products (Local first)
                 const allProducts = [...localProducts, ...validApiProducts];
 
-                // 5. Extract categories
-                const productCategories = allProducts.map(p =>
-                    isMiscCategory(p.category.name) ? 'Others' : p.category.name
-                );
+                // 2. Process Categories from API
+                // We trust the API for the category list as requested
+                // But we still might want to filter out empty names or duplicates
+                const apiCategories = categoryRes.data
+                    .map(c => c.name)
+                    .filter(name => name && isCleanCategory(name)); // Apply basic clean filter
 
-                const uniqueCategories = ['All', ...new Set(productCategories)];
+                // Also include categories from Local Products if they aren't in the API list
+                const localCategories = localProducts.map(p => p.category.name);
+
+                const uniqueCategories = ['All', ...new Set([...apiCategories, ...localCategories])];
 
                 setProducts(allProducts);
                 setFilteredProducts(allProducts);

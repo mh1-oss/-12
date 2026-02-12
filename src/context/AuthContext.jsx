@@ -18,6 +18,8 @@ export const AuthProvider = ({ children }) => {
                     const response = await axios.get('https://api.escuelajs.co/api/v1/auth/profile', {
                         headers: { Authorization: `Bearer ${token}` },
                     });
+
+                    // The API returns { id, name, email, avatar, role, ... }
                     setUser(response.data);
                 } catch (error) {
                     console.error("Failed to fetch user profile", error);
@@ -42,7 +44,7 @@ export const AuthProvider = ({ children }) => {
             return true;
         } catch (error) {
             console.error("Login failed", error);
-            throw error;
+            throw error; // Let the component handle the error display
         }
     };
 
@@ -50,6 +52,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         setToken(null);
         localStorage.removeItem('token');
+        // Optional: clear other local storage if needed (but product changes should usually stay)
     };
 
     return (

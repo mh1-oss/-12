@@ -42,7 +42,7 @@ const Navbar = () => {
                     <Link to="/" className="nav-link" onClick={() => setIsMenuOpen(false)}>Home</Link>
                     <Link to="/shop" className="nav-link" onClick={() => setIsMenuOpen(false)}>Shop</Link>
                     <Link to="/about" className="nav-link" onClick={() => setIsMenuOpen(false)}>About</Link>
-                    {user && <Link to="/admin" className="nav-link" onClick={() => setIsMenuOpen(false)}>Admin</Link>}
+                    {user && user.role === 'admin' && <Link to="/admin" className="nav-link" onClick={() => setIsMenuOpen(false)}>Admin</Link>}
 
                     {/* Mobile Only: User Info */}
                     {user && isMenuOpen && (
