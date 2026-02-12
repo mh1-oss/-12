@@ -27,9 +27,6 @@ const Shop = () => {
                 ]);
 
                 // 1. Process Products
-                // Allow letters, spaces, numbers, and common punctuation like &, -, ', etc.
-                const isCleanCategory = (name) => /^[a-zA-Z0-9\s&'-]+$/.test(name) && !/test/i.test(name) && name.length < 40;
-
                 const localProducts = JSON.parse(localStorage.getItem('local_products') || '[]');
                 const deletedIds = JSON.parse(localStorage.getItem('deleted_products') || '[]');
 
@@ -40,24 +37,28 @@ const Shop = () => {
                     product.images.length > 0 &&
                     product.images[0].startsWith('http') &&
                     !product.images[0].includes('placeimg.com') &&
-                    isCleanCategory(product.category.name) &&
                     !deletedSet.has(product.id) &&
                     !localIds.has(product.id)
                 );
 
-                const allProducts = [...localProducts, ...validApiProducts];
+                // Helper to map 'prod-cat' -> 'Collection'
+                const mapCategory = (p) => {
+                    if (p.category.name.toLowerCase().includes('prod-cat')) {
+                        return { ...p, category: { ...p.category, name: 'Collection' } };
+                    }
+                    return p;
+                };
 
-                // 2. Process Categories from API
-                // We trust the API for the category list as requested
-                // But we still might want to filter out empty names or duplicates
-                const apiCategories = categoryRes.data
-                    .map(c => c.name)
-                    .filter(name => name && isCleanCategory(name)); // Apply basic clean filter
+                const processedLocalProducts = localProducts.map(mapCategory);
+                const processedApiProducts = validApiProducts.map(mapCategory);
 
-                // Also include categories from Local Products if they aren't in the API list
-                const localCategories = localProducts.map(p => p.category.name);
+                const allProducts = [...processedLocalProducts, ...processedApiProducts];
 
-                const uniqueCategories = ['All', ...new Set([...apiCategories, ...localCategories])];
+                // 2. Process Categories
+                // Extract unique names from ALL processed products
+                const allCategories = [...new Set(allProducts.map(p => p.category.name))].sort();
+
+                const uniqueCategories = ['All', ...allCategories];
 
                 setProducts(allProducts);
                 setFilteredProducts(allProducts);
